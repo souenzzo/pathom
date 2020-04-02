@@ -722,18 +722,30 @@
     ::continue))
 
 (defn lift-placeholders-ast
-  "This will lift the AST from placeholders to the same level of the query, as if there was not placeholders in it."
-  [env ast]
-  (walk/postwalk
-    (fn [x]
-      (if-let [children (:children x)]
-        (let [{placeholders true
-               regular      false} (group-by #(and (= :join (:type %))
-                                                   (placeholder-key? env (:dispatch-key %))) children)]
-          (as-> (assoc x :children (or regular [])) <>
-            (reduce merge-queries* <> placeholders)))
-        x))
-    ast))
+  [env {:keys [children]
+        :as   ast}]
+  (letfn [(lift-node [{:keys [dispatch-key children]
+                       :as   node}]
+            (let [placeholder? (and children
+                                    (placeholder-key? env dispatch-key))]
+              (cond
+                placeholder? (merge-nodes (mapcat lift-node children))
+                (contains? node :children) [(assoc node
+                                              :children (merge-nodes (mapcat lift-node children)))]
+                :else [node])))
+          (merge-nodes [nodes]
+            (let [k->nodes (group-by (juxt :dispatch-key :union-key)
+                                     nodes)]
+              (into []
+                    (comp (map (juxt :dispatch-key :union-key))
+                          (distinct)
+                          (map (fn [k]
+                                 (reduce eql/merge-asts (get k->nodes k)))))
+                    nodes)))]
+    (if (contains? ast :children)
+      (assoc ast :children (merge-nodes (mapcat lift-node children)))
+      ast)))
+
 
 (defn lift-placeholders
   "This will lift the queries from placeholders to the same level of the query, as if there was not placeholders in it."

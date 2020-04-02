@@ -481,8 +481,8 @@
                                                 :service/banks
                                                 :service.Customer/name
                                                 :other/thing]))
-           [:service/banks
-            {[:customer/customerId "123"] [:service.Customer/name :service.Customer/cpf]}]))))
+           [{[:customer/customerId "123"] [:service.Customer/cpf :service.Customer/name]}
+            :service/banks]))))
 
 (deftest test-pull-idents
   (is (= (pcg/pull-idents {:service/banks               [{:service.Bank/name "Dino"}]
