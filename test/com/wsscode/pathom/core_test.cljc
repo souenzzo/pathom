@@ -1034,6 +1034,13 @@
   (is (= (p/map->shape-descriptor {:a [{:b 1} {:c 2}]})
          {:a {:b {} :c {}}}))
 
+  (is (= (p/map->shape-descriptor
+           {::p/final-value? vector?}
+           {:a [{:b 1} {:c 2}]
+            :b (seq [{:b 1} {:c 2}])})
+         {:a {}
+          :b {:b {} :c {}}}))
+
   (is (= (p/map->shape-descriptor {:a {:b 1 :c 2}})
          {:a {:b {}
               :c {}}})))

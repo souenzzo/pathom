@@ -226,29 +226,36 @@
     {}
     (:children ast)))
 
+
 (>defn map->shape-descriptor
   "Convert Map to shape descriptor format"
-  [m]
-  [map? => ::shape-descriptor]
-  (reduce-kv
-    (fn [m k v]
-      (assoc m k
-        (cond
-          (map? v)
-          (map->shape-descriptor v)
+  ([m]
+   [map? => ::shape-descriptor]
+   (map->shape-descriptor {} m))
+  ([{::keys [final-value?]
+     :or    {final-value? (constantly false)}
+     :as    env} m]
+   [map? map? => ::shape-descriptor]
+   (reduce-kv
+     (fn [m k v]
+       (assoc m k
+                (cond
+                  (final-value? v) {}
+                  (map? v)
+                  (map->shape-descriptor env v)
+                  (sequential? v)
+                  (transduce
+                    (comp (filter map?)
+                          (map map->shape-descriptor))
+                    merge-shapes
+                    {}
+                    v)
 
-          (sequential? v)
-          (transduce
-            (comp (filter map?)
-                  (map map->shape-descriptor))
-            merge-shapes
-            {}
-            v)
+                  :else
+                  {})))
+     {}
+     m)))
 
-          :else
-          {})))
-    {}
-    m))
 
 (defn read-from* [{:keys [ast] :as env} reader]
   (cond
