@@ -1245,7 +1245,7 @@
     (if (contains? reader3-computed-plans path)
       ::p/continue
       (let [ast            (pt/tracing env {::pt/event ::reader3-prepare-ast} (reader3-prepare-ast env))
-            available-data (pt/tracing env {::pt/event ::reader3-entity-shape} (-> env p/entity p/map->shape-descriptor))
+            available-data (pt/tracing env {::pt/event ::reader3-entity-shape} (->> env p/entity (partial p/map->shape-descriptor env)))
             process-start  (pt/trace-enter env {::pt/event ::reader3-execute})
             plan           (reader3-compute-run-graph
                              (merge env indexes {:edn-query-language.ast/node ast
